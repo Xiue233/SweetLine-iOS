@@ -2,6 +2,8 @@
 
 SweetLine for iOS is a Swift Package SDK over the SweetLine native core.
 
+The main SweetLine monorepo is available at [FinalScave/SweetLine](https://github.com/FinalScave/SweetLine).
+
 ## Install
 
 For local development, add this folder as a local Swift Package dependency from an iOS app project:
