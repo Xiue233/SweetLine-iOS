@@ -104,6 +104,7 @@ public final class DocumentAnalyzer {
     ) throws -> DocumentHighlightSlice
     public func getHighlightSlice(_ visibleRange: LineRange) throws -> DocumentHighlightSlice
     public func analyzeIndentGuides() throws -> IndentGuideResult
+    public func analyzeIndentGuidesInLineRange(_ visibleRange: LineRange) throws -> IndentGuideResult
     public func close()
 }
 ```
@@ -180,7 +181,8 @@ if let analyzer = try engine.loadDocument(document) {
         visibleRange: LineRange(startLine: 0, lineCount: 80)
     )
     let indentGuides = try analyzer.analyzeIndentGuides()
-    _ = (initial, updated, cachedVisible, visible, indentGuides)
+    let visibleIndentGuides = try analyzer.analyzeIndentGuidesInLineRange(LineRange(startLine: 0, lineCount: 80))
+    _ = (initial, updated, cachedVisible, visible, indentGuides, visibleIndentGuides)
     analyzer.close()
 }
 ```

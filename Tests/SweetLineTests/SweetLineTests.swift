@@ -76,7 +76,8 @@ final class SweetLineTests: XCTestCase {
         XCTAssertGreaterThan(lineResult.charCount, 0)
 
         let textGuides = try textAnalyzer.analyzeIndentGuides(source)
-        XCTAssertNotNil(textGuides)
+        XCTAssertEqual(textGuides.startLine, 0)
+        XCTAssertEqual(textGuides.lineStates.count, textHighlight.lines.count)
 
         let fileAnalyzer = try XCTUnwrap(engine.createAnalyzer(fileName: "Demo.swift"))
         defer { fileAnalyzer.close() }
@@ -115,7 +116,12 @@ final class SweetLineTests: XCTestCase {
         XCTAssertFalse(visible.lines.isEmpty)
 
         let documentGuides = try documentAnalyzer.analyzeIndentGuides()
-        XCTAssertNotNil(documentGuides)
+        XCTAssertEqual(documentGuides.startLine, 0)
+        XCTAssertEqual(documentGuides.lineStates.count, full.lines.count)
+
+        let visibleGuides = try documentAnalyzer.analyzeIndentGuidesInLineRange(LineRange(startLine: 1, lineCount: 1))
+        XCTAssertEqual(visibleGuides.startLine, 1)
+        XCTAssertEqual(visibleGuides.lineStates.count, 1)
     }
 
     private func syntaxFileURL() throws -> URL {

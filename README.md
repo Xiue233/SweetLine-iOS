@@ -57,6 +57,7 @@ defer { document.close() }
 let documentAnalyzer = try engine.loadDocument(document)
 let full = try documentAnalyzer?.analyze()
 let guides = try documentAnalyzer?.analyzeIndentGuides()
+let visibleGuides = try documentAnalyzer?.analyzeIndentGuidesInLineRange(LineRange(startLine: 0, lineCount: 80))
 let updated = try documentAnalyzer?.analyzeIncremental(
     range: TextRange(
         start: TextPosition(line: 0, column: 4),

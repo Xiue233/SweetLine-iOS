@@ -165,23 +165,23 @@ public struct IndentGuideLine: Sendable, Equatable {
     public let column: Int
     public let startLine: Int
     public let endLine: Int
-    public let nestingLevel: Int
-    public let scopeRuleId: Int32
+    public let continuesBefore: Bool
+    public let continuesAfter: Bool
     public var branches: [BranchPoint]
 
     public init(
         column: Int,
         startLine: Int,
         endLine: Int,
-        nestingLevel: Int,
-        scopeRuleId: Int32,
+        continuesBefore: Bool,
+        continuesAfter: Bool,
         branches: [BranchPoint] = []
     ) {
         self.column = column
         self.startLine = startLine
         self.endLine = endLine
-        self.nestingLevel = nestingLevel
-        self.scopeRuleId = scopeRuleId
+        self.continuesBefore = continuesBefore
+        self.continuesAfter = continuesAfter
         self.branches = branches
     }
 }
@@ -201,10 +201,12 @@ public struct LineScopeState: Sendable, Equatable {
 }
 
 public struct IndentGuideResult: Sendable, Equatable {
+    public let startLine: Int
     public var guideLines: [IndentGuideLine]
     public var lineStates: [LineScopeState]
 
-    public init(guideLines: [IndentGuideLine] = [], lineStates: [LineScopeState] = []) {
+    public init(startLine: Int = 0, guideLines: [IndentGuideLine] = [], lineStates: [LineScopeState] = []) {
+        self.startLine = startLine
         self.guideLines = guideLines
         self.lineStates = lineStates
     }

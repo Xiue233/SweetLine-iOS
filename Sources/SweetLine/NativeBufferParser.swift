@@ -84,9 +84,10 @@ enum NativeBufferParser {
     }
 
     static func readIndentGuideResult(_ buffer: UnsafeMutablePointer<Int32>) -> IndentGuideResult {
-        let guideCount = nonNegative(buffer[0])
-        let lineStateCount = nonNegative(buffer[2])
-        var index = 4
+        let startLine = Int(buffer[0])
+        let lineStateCount = nonNegative(buffer[1])
+        let guideCount = nonNegative(buffer[2])
+        var index = 3
         var guideLines: [IndentGuideLine] = []
         guideLines.reserveCapacity(guideCount)
 
@@ -94,8 +95,9 @@ enum NativeBufferParser {
             let column = Int(buffer[index]); index += 1
             let startLine = Int(buffer[index]); index += 1
             let endLine = Int(buffer[index]); index += 1
-            let nestingLevel = Int(buffer[index]); index += 1
-            let scopeRuleId = buffer[index]; index += 1
+            let flags = buffer[index]; index += 1
+            let continuesBefore = (flags & 1) != 0
+            let continuesAfter = (flags & (1 << 1)) != 0
             let branchCount = nonNegative(buffer[index]); index += 1
 
             var branches: [IndentGuideLine.BranchPoint] = []
@@ -110,8 +112,8 @@ enum NativeBufferParser {
                 column: column,
                 startLine: startLine,
                 endLine: endLine,
-                nestingLevel: nestingLevel,
-                scopeRuleId: scopeRuleId,
+                continuesBefore: continuesBefore,
+                continuesAfter: continuesAfter,
                 branches: branches
             ))
         }
@@ -131,7 +133,7 @@ enum NativeBufferParser {
             ))
         }
 
-        return IndentGuideResult(guideLines: guideLines, lineStates: lineStates)
+        return IndentGuideResult(startLine: startLine, guideLines: guideLines, lineStates: lineStates)
     }
 
     private static func readTokenSpan(

@@ -106,6 +106,21 @@ public final class DocumentAnalyzer {
         return NativeBufferParser.readIndentGuideResult(result)
     }
 
+    public func analyzeIndentGuidesInLineRange(_ visibleRange: LineRange) throws -> IndentGuideResult {
+        try ensureOpen()
+        var visible = [Int32(visibleRange.startLine), Int32(visibleRange.lineCount)]
+        return try visible.withUnsafeMutableBufferPointer { visibleBuffer in
+            guard let visiblePtr = visibleBuffer.baseAddress else {
+                throw SweetLineError.invalidNativeBuffer("Unable to allocate visible range buffer.")
+            }
+            guard let result = sl_document_analyze_indent_guides_in_line_range(handle, visiblePtr) else {
+                return IndentGuideResult()
+            }
+            defer { sl_free_buffer(result) }
+            return NativeBufferParser.readIndentGuideResult(result)
+        }
+    }
+
     public func close() {
         closed = true
     }
