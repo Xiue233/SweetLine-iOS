@@ -121,6 +121,30 @@ public final class DocumentAnalyzer {
         }
     }
 
+    public func analyzeBracketPairs() throws -> BracketPairResult {
+        try ensureOpen()
+        guard let result = sl_document_analyze_bracket_pairs(handle) else {
+            return BracketPairResult()
+        }
+        defer { sl_free_buffer(result) }
+        return NativeBufferParser.readBracketPairResult(result)
+    }
+
+    public func analyzeBracketPairsInLineRange(_ visibleRange: LineRange) throws -> BracketPairResult {
+        try ensureOpen()
+        var visible = [Int32(visibleRange.startLine), Int32(visibleRange.lineCount)]
+        return try visible.withUnsafeMutableBufferPointer { visibleBuffer in
+            guard let visiblePtr = visibleBuffer.baseAddress else {
+                throw SweetLineError.invalidNativeBuffer("Unable to allocate visible range buffer.")
+            }
+            guard let result = sl_document_analyze_bracket_pairs_in_line_range(handle, visiblePtr) else {
+                return BracketPairResult()
+            }
+            defer { sl_free_buffer(result) }
+            return NativeBufferParser.readBracketPairResultSlice(result)
+        }
+    }
+
     public func close() {
         closed = true
     }

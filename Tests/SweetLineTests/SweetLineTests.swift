@@ -79,6 +79,10 @@ final class SweetLineTests: XCTestCase {
         XCTAssertEqual(textGuides.startLine, 0)
         XCTAssertEqual(textGuides.lineStates.count, textHighlight.lines.count)
 
+        let textBrackets = try textAnalyzer.analyzeBracketPairs(source)
+        XCTAssertEqual(textBrackets.totalLineCount, textHighlight.lines.count)
+        XCTAssertGreaterThan(textBrackets.lines.flatMap(\.tokens).count, 0)
+
         let fileAnalyzer = try XCTUnwrap(engine.createAnalyzer(fileName: "Demo.swift"))
         defer { fileAnalyzer.close() }
         XCTAssertFalse(try fileAnalyzer.analyzeText(source).lines.isEmpty)
@@ -122,6 +126,14 @@ final class SweetLineTests: XCTestCase {
         let visibleGuides = try documentAnalyzer.analyzeIndentGuidesInLineRange(LineRange(startLine: 1, lineCount: 1))
         XCTAssertEqual(visibleGuides.startLine, 1)
         XCTAssertEqual(visibleGuides.lineStates.count, 1)
+
+        let documentBrackets = try documentAnalyzer.analyzeBracketPairs()
+        XCTAssertEqual(documentBrackets.totalLineCount, full.lines.count)
+        XCTAssertGreaterThan(documentBrackets.lines.flatMap(\.tokens).count, 0)
+
+        let visibleBrackets = try documentAnalyzer.analyzeBracketPairsInLineRange(LineRange(startLine: 0, lineCount: 2))
+        XCTAssertEqual(visibleBrackets.startLine, 0)
+        XCTAssertEqual(visibleBrackets.lines.count, 2)
     }
 
     private func syntaxFileURL() throws -> URL {

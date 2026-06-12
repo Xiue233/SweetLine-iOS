@@ -106,13 +106,14 @@ struct ContentView: View {
     }
 
     private var codeArea: some View {
-        HighlightedCodeView(
-            source: viewModel.sourceCode,
-            highlight: viewModel.highlight,
-            indentGuides: viewModel.indentGuides,
-            theme: viewModel.currentTheme,
-            onTextChange: viewModel.applyTextEdit(range:replacementText:)
-        )
+                HighlightedCodeView(
+                    source: viewModel.sourceCode,
+                    highlight: viewModel.highlight,
+                    indentGuides: viewModel.indentGuides,
+                    bracketPairs: viewModel.bracketPairs,
+                    theme: viewModel.currentTheme,
+                    onTextChange: viewModel.applyTextEdit(range:replacementText:)
+                )
         .background(viewModel.currentTheme.background)
     }
 

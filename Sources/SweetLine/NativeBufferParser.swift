@@ -136,6 +136,36 @@ enum NativeBufferParser {
         return IndentGuideResult(startLine: startLine, guideLines: guideLines, lineStates: lineStates)
     }
 
+    static func readBracketPairResult(_ buffer: UnsafeMutablePointer<Int32>) -> BracketPairResult {
+        let flags = buffer[0]
+        let stride = Int(buffer[1])
+        let lineCount = nonNegative(buffer[2])
+        let hasStartIndex = flagsHasStartIndex(flags)
+        guard isValidBracketTokenStride(stride, hasStartIndex: hasStartIndex) else {
+            return BracketPairResult()
+        }
+
+        var index = 3
+        let lines = readBracketLines(buffer, index: &index, startLine: 0, lineCount: lineCount, hasStartIndex: hasStartIndex)
+        return BracketPairResult(startLine: 0, totalLineCount: lineCount, lines: lines)
+    }
+
+    static func readBracketPairResultSlice(_ buffer: UnsafeMutablePointer<Int32>) -> BracketPairResult {
+        let flags = buffer[0]
+        let stride = Int(buffer[1])
+        let startLine = Int(buffer[2])
+        let totalLineCount = Int(buffer[3])
+        let lineCount = nonNegative(buffer[4])
+        let hasStartIndex = flagsHasStartIndex(flags)
+        guard isValidBracketTokenStride(stride, hasStartIndex: hasStartIndex) else {
+            return BracketPairResult(startLine: startLine, totalLineCount: totalLineCount)
+        }
+
+        var index = 5
+        let lines = readBracketLines(buffer, index: &index, startLine: startLine, lineCount: lineCount, hasStartIndex: hasStartIndex)
+        return BracketPairResult(startLine: startLine, totalLineCount: totalLineCount, lines: lines)
+    }
+
     private static func readTokenSpan(
         _ buffer: UnsafeMutablePointer<Int32>,
         index: inout Int,
@@ -174,8 +204,90 @@ enum NativeBufferParser {
         return TokenSpan(range: range, styleId: styleId)
     }
 
+    private static func readBracketLines(
+        _ buffer: UnsafeMutablePointer<Int32>,
+        index: inout Int,
+        startLine: Int,
+        lineCount: Int,
+        hasStartIndex: Bool
+    ) -> [LineBracketPairs] {
+        var lines: [LineBracketPairs] = []
+        lines.reserveCapacity(lineCount)
+
+        for offset in 0..<lineCount {
+            let tokenCount = nonNegative(buffer[index])
+            index += 1
+            var tokens: [BracketToken] = []
+            tokens.reserveCapacity(tokenCount)
+
+            for _ in 0..<tokenCount {
+                tokens.append(readBracketToken(buffer, index: &index, line: startLine + offset, hasStartIndex: hasStartIndex))
+            }
+
+            lines.append(LineBracketPairs(tokens: tokens))
+        }
+
+        return lines
+    }
+
+    private static func readBracketToken(
+        _ buffer: UnsafeMutablePointer<Int32>,
+        index: inout Int,
+        line: Int,
+        hasStartIndex: Bool
+    ) -> BracketToken {
+        let column = Int(buffer[index]); index += 1
+        let length = Int(buffer[index]); index += 1
+        let tokenStartIndex: Int
+        if hasStartIndex {
+            tokenStartIndex = Int(buffer[index])
+            index += 1
+        } else {
+            tokenStartIndex = 0
+        }
+
+        let depth = Int(buffer[index]); index += 1
+        let kind = BracketTokenKind(nativeValue: buffer[index]); index += 1
+        let matchState = BracketMatchState(nativeValue: buffer[index]); index += 1
+        let partnerLine = Int(buffer[index]); index += 1
+        let partnerColumn = Int(buffer[index]); index += 1
+        let partnerLength = Int(buffer[index]); index += 1
+        let partnerStartIndex: Int
+        if hasStartIndex {
+            partnerStartIndex = Int(buffer[index])
+            index += 1
+        } else {
+            partnerStartIndex = 0
+        }
+
+        let range = TextRange(
+            start: TextPosition(line: line, column: column, index: tokenStartIndex),
+            end: TextPosition(line: line, column: column + length, index: hasStartIndex ? tokenStartIndex + length : 0)
+        )
+        let partnerRange: TextRange?
+        if partnerLine >= 0, partnerColumn >= 0, partnerLength >= 0 {
+            partnerRange = TextRange(
+                start: TextPosition(line: partnerLine, column: partnerColumn, index: partnerStartIndex),
+                end: TextPosition(
+                    line: partnerLine,
+                    column: partnerColumn + partnerLength,
+                    index: hasStartIndex ? partnerStartIndex + partnerLength : 0
+                )
+            )
+        } else {
+            partnerRange = nil
+        }
+
+        return BracketToken(range: range, depth: depth, kind: kind, matchState: matchState, partnerRange: partnerRange)
+    }
+
     private static func isValidSpanStride(_ stride: Int, hasStartIndex: Bool, inlineStyle: Bool) -> Bool {
         let expected = 2 + (hasStartIndex ? 1 : 0) + (inlineStyle ? 3 : 1)
+        return stride == expected
+    }
+
+    private static func isValidBracketTokenStride(_ stride: Int, hasStartIndex: Bool) -> Bool {
+        let expected = 8 + (hasStartIndex ? 2 : 0)
         return stride == expected
     }
 

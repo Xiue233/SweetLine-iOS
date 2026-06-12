@@ -52,6 +52,18 @@ public final class TextAnalyzer {
         return NativeBufferParser.readIndentGuideResult(result)
     }
 
+    public func analyzeBracketPairs(_ text: String) throws -> BracketPairResult {
+        try ensureOpen()
+        let result = text.withCString { textPtr in
+            sl_text_analyze_bracket_pairs(handle, textPtr)
+        }
+        guard let result else {
+            return BracketPairResult()
+        }
+        defer { sl_free_buffer(result) }
+        return NativeBufferParser.readBracketPairResult(result)
+    }
+
     public func close() {
         closed = true
     }

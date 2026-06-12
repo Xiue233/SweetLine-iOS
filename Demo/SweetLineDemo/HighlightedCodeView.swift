@@ -6,6 +6,7 @@ struct HighlightedCodeView: UIViewRepresentable {
     let source: String
     let highlight: DocumentHighlight?
     let indentGuides: IndentGuideResult?
+    let bracketPairs: BracketPairResult?
     let theme: HighlightTheme
     let onTextChange: (NSRange, String) -> Void
 
@@ -45,7 +46,7 @@ struct HighlightedCodeView: UIViewRepresentable {
 
         let selectedRange = textView.selectedRange
         let contentOffset = textView.contentOffset
-        let attributedText = Self.attributedString(source: source, highlight: highlight, theme: theme)
+        let attributedText = Self.attributedString(source: source, highlight: highlight, bracketPairs: bracketPairs, theme: theme)
 
         context.coordinator.isApplyingHighlight = true
         textView.attributedText = attributedText
@@ -83,22 +84,47 @@ struct HighlightedCodeView: UIViewRepresentable {
     }
 
     private static let codeFont = UIFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+    private static let bracketPalette: [UIColor] = [
+        UIColor(argb: 0xFF7DD3FC),
+        UIColor(argb: 0xFFF9A8D4),
+        UIColor(argb: 0xFFFDE047),
+        UIColor(argb: 0xFF86EFAC),
+        UIColor(argb: 0xFFC4B5FD),
+        UIColor(argb: 0xFFFDBA74),
+    ]
 
-    private static func attributedString(source: String, highlight: DocumentHighlight?, theme: HighlightTheme) -> NSAttributedString {
+    private static func attributedString(
+        source: String,
+        highlight: DocumentHighlight?,
+        bracketPairs: BracketPairResult?,
+        theme: HighlightTheme
+    ) -> NSAttributedString {
         let attributed = NSMutableAttributedString(
             string: source,
             attributes: baseAttributes(theme: theme, font: codeFont)
         )
 
-        guard let highlight else { return attributed }
         let lines = source.components(separatedBy: "\n")
         let lineStarts = utf16LineStarts(in: lines)
 
-        for lineIndex in highlight.lines.indices {
-            guard lineIndex < lines.count else { continue }
-            for span in highlight.lines[lineIndex].spans {
-                guard let nsRange = nsRange(for: span, lines: lines, lineStarts: lineStarts) else { continue }
-                attributed.addAttributes(attributes(for: span.style, theme: theme), range: nsRange)
+        if let highlight {
+            for lineIndex in highlight.lines.indices {
+                guard lineIndex < lines.count else { continue }
+                for span in highlight.lines[lineIndex].spans {
+                    guard let nsRange = nsRange(for: span.range, source: source, lines: lines, lineStarts: lineStarts) else { continue }
+                    attributed.addAttributes(attributes(for: span.style, theme: theme), range: nsRange)
+                }
+            }
+        }
+
+        if let bracketPairs {
+            for offset in bracketPairs.lines.indices {
+                let lineIndex = bracketPairs.startLine + offset
+                guard lineIndex < lines.count else { continue }
+                for token in bracketPairs.lines[offset].tokens {
+                    guard let nsRange = nsRange(for: token.range, source: source, lines: lines, lineStarts: lineStarts) else { continue }
+                    attributed.addAttribute(.foregroundColor, value: bracketColor(for: token), range: nsRange)
+                }
             }
         }
 
@@ -149,19 +175,45 @@ struct HighlightedCodeView: UIViewRepresentable {
         return UIFont(descriptor: descriptor, size: codeFont.pointSize)
     }
 
-    private static func nsRange(for span: TokenSpan, lines: [String], lineStarts: [Int]) -> NSRange? {
-        let line = span.range.start.line
+    private static func bracketColor(for token: BracketToken) -> UIColor {
+        if token.matchState == .unmatched {
+            return UIColor(argb: 0xFFFF6B6B)
+        }
+        let index = ((token.depth % bracketPalette.count) + bracketPalette.count) % bracketPalette.count
+        let color = bracketPalette[index]
+        return token.matchState == .unknown ? color.withAlphaComponent(0.68) : color
+    }
+
+    private static func nsRange(for range: TextRange, source: String, lines: [String], lineStarts: [Int]) -> NSRange? {
+        if let globalRange = nsRangeForUnicodeScalarOffsets(start: range.start.index, end: range.end.index, in: source) {
+            return globalRange
+        }
+
+        let line = range.start.line
         guard lines.indices.contains(line), lineStarts.indices.contains(line) else { return nil }
 
         let lineText = lines[line]
-        let startColumn = max(0, min(span.range.start.column, lineText.count))
-        let endColumn = max(startColumn, min(span.range.end.column, lineText.count))
-        guard let startOffset = utf16Offset(in: lineText, column: startColumn),
-              let endOffset = utf16Offset(in: lineText, column: endColumn) else {
+        let scalarCount = lineText.unicodeScalars.count
+        let startColumn = max(0, min(range.start.column, scalarCount))
+        let endColumn = max(startColumn, min(range.end.column, scalarCount))
+        guard let startOffset = utf16Offset(in: lineText, unicodeScalarOffset: startColumn),
+              let endOffset = utf16Offset(in: lineText, unicodeScalarOffset: endColumn) else {
             return nil
         }
 
         return NSRange(location: lineStarts[line] + startOffset, length: endOffset - startOffset)
+    }
+
+    private static func nsRangeForUnicodeScalarOffsets(start: Int, end: Int, in source: String) -> NSRange? {
+        guard end > start else { return nil }
+        let scalarCount = source.unicodeScalars.count
+        guard start >= 0, end <= scalarCount else { return nil }
+        guard let startOffset = utf16Offset(in: source, unicodeScalarOffset: start),
+              let endOffset = utf16Offset(in: source, unicodeScalarOffset: end),
+              endOffset >= startOffset else {
+            return nil
+        }
+        return NSRange(location: startOffset, length: endOffset - startOffset)
     }
 
     private static func utf16LineStarts(in lines: [String]) -> [Int] {
@@ -175,10 +227,20 @@ struct HighlightedCodeView: UIViewRepresentable {
         return starts
     }
 
-    private static func utf16Offset(in line: String, column: Int) -> Int? {
-        let index = line.index(line.startIndex, offsetBy: min(column, line.count))
-        guard let utf16Index = index.samePosition(in: line.utf16) else { return nil }
-        return line.utf16.distance(from: line.utf16.startIndex, to: utf16Index)
+    private static func utf16Offset(in text: String, unicodeScalarOffset: Int) -> Int? {
+        let clampedOffset = max(0, min(unicodeScalarOffset, text.unicodeScalars.count))
+        var currentScalarOffset = 0
+        var utf16Offset = 0
+
+        for scalar in text.unicodeScalars {
+            if currentScalarOffset == clampedOffset {
+                return utf16Offset
+            }
+            utf16Offset += scalar.utf16.count
+            currentScalarOffset += 1
+        }
+
+        return currentScalarOffset == clampedOffset ? utf16Offset : nil
     }
 
     private static func clamped(range: NSRange, length: Int) -> NSRange {

@@ -21,6 +21,7 @@ final class DemoViewModel: ObservableObject {
     @Published var sourceCode = ""
     @Published var highlight: DocumentHighlight?
     @Published var indentGuides: IndentGuideResult?
+    @Published var bracketPairs: BracketPairResult?
 
     let themes = HighlightTheme.builtinThemes()
 
@@ -142,6 +143,7 @@ final class DemoViewModel: ObservableObject {
             sourceCode = newSource
             highlight = nil
             indentGuides = nil
+            bracketPairs = nil
             return
         }
 
@@ -150,11 +152,14 @@ final class DemoViewModel: ObservableObject {
             let updatedHighlight = try analyzer.analyzeIncremental(range: changeRange, newText: replacementText)
             let analyzeMicros = Int((DispatchTime.now().uptimeNanoseconds - startedAt) / 1_000)
             let guides = try analyzer.analyzeIndentGuides()
+            let pairs = try analyzer.analyzeBracketPairs()
 
             sourceCode = newSource
             highlight = updatedHighlight
             indentGuides = guides
-            status = "Warmup: \(compiledSyntaxCount) files in \(warmupElapsedMillis) ms | Incremental: \(formatMicros(analyzeMicros)) | Lines: \(lineCount(newSource)) | File: \(currentDocumentName)"
+            bracketPairs = pairs
+            let bracketTokenCount = pairs.lines.reduce(0) { $0 + $1.tokens.count }
+            status = "Warmup: \(compiledSyntaxCount) files in \(warmupElapsedMillis) ms | Incremental: \(formatMicros(analyzeMicros)) | Lines: \(lineCount(newSource)) | Brackets: \(bracketTokenCount) | File: \(currentDocumentName)"
         } catch {
             sourceCode = newSource
             status = "Incremental failed, reloading: \(error)"
@@ -199,6 +204,7 @@ final class DemoViewModel: ObservableObject {
                 sourceCode = source
                 highlight = nil
                 indentGuides = nil
+                bracketPairs = nil
                 status = "No matching syntax for file: \(documentFileName)"
                 return
             }
@@ -207,6 +213,7 @@ final class DemoViewModel: ObservableObject {
             let documentHighlight = try analyzer.analyze()
             let analyzeMicros = Int((DispatchTime.now().uptimeNanoseconds - startedAt) / 1_000)
             let guides = try analyzer.analyzeIndentGuides()
+            let pairs = try analyzer.analyzeBracketPairs()
 
             currentDocument = document
             currentAnalyzer = analyzer
@@ -215,14 +222,17 @@ final class DemoViewModel: ObservableObject {
             sourceCode = source
             highlight = documentHighlight
             indentGuides = guides
+            bracketPairs = pairs
 
             let mode = inlineStyle ? " [inline]" : ""
-            status = "Warmup: \(compiledSyntaxCount) files in \(warmupElapsedMillis) ms | Analyze: \(formatMicros(analyzeMicros)) | Lines: \(lineCount(source)) | File: \(displayFileName)\(mode)"
+            let bracketTokenCount = pairs.lines.reduce(0) { $0 + $1.tokens.count }
+            status = "Warmup: \(compiledSyntaxCount) files in \(warmupElapsedMillis) ms | Analyze: \(formatMicros(analyzeMicros)) | Lines: \(lineCount(source)) | Brackets: \(bracketTokenCount) | File: \(displayFileName)\(mode)"
         } catch {
             closeCurrentDocument()
             sourceCode = ""
             highlight = nil
             indentGuides = nil
+            bracketPairs = nil
             status = "Error: \(error)"
         }
     }
@@ -371,7 +381,7 @@ final class DemoViewModel: ObservableObject {
                 line += 1
                 column = 0
             } else {
-                column += 1
+                column += text[index].unicodeScalars.count
             }
             index = text.index(after: index)
         }

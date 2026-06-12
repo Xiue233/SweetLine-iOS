@@ -58,6 +58,8 @@ let documentAnalyzer = try engine.loadDocument(document)
 let full = try documentAnalyzer?.analyze()
 let guides = try documentAnalyzer?.analyzeIndentGuides()
 let visibleGuides = try documentAnalyzer?.analyzeIndentGuidesInLineRange(LineRange(startLine: 0, lineCount: 80))
+let brackets = try documentAnalyzer?.analyzeBracketPairs()
+let visibleBrackets = try documentAnalyzer?.analyzeBracketPairsInLineRange(LineRange(startLine: 0, lineCount: 80))
 let updated = try documentAnalyzer?.analyzeIncremental(
     range: TextRange(
         start: TextPosition(line: 0, column: 4),
@@ -78,6 +80,7 @@ let visible = try documentAnalyzer?.getHighlightSlice(LineRange(startLine: 0, li
 - `TextPosition`, `TextRange`, `TextLineInfo`, `LineRange`
 - `TokenSpan`, `LineHighlight`, `DocumentHighlight`, `DocumentHighlightSlice`
 - `IndentGuideLine`, `IndentGuideResult`, `LineScopeState`
+- `BracketTokenKind`, `BracketMatchState`, `BracketToken`, `LineBracketPairs`, `BracketPairResult`
 - `SyntaxCompileError`
 
 ## Layout

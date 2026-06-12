@@ -54,6 +54,7 @@ For remote SwiftPM distribution, publish `SweetLineCoreIOS.xcframework.zip` as a
 - `TextPosition`, `TextRange`, `TextLineInfo`, `LineRange`
 - `TokenStyle`, `TokenSpan`, `LineHighlight`, `DocumentHighlight`
 - `DocumentHighlightSlice`
+- `BracketTokenKind`, `BracketMatchState`, `BracketToken`, `LineBracketPairs`, `BracketPairResult`
 - `IndentGuideLine`, `IndentGuideResult`, `LineScopeState`
 - `SweetLineError`, `SyntaxCompileError`
 
@@ -86,6 +87,7 @@ public final class TextAnalyzer {
     public func analyzeText(_ text: String) throws -> DocumentHighlight
     public func analyzeLine(_ text: String, info: TextLineInfo) throws -> LineAnalyzeResult
     public func analyzeIndentGuides(_ text: String) throws -> IndentGuideResult
+    public func analyzeBracketPairs(_ text: String) throws -> BracketPairResult
     public func close()
 }
 ```
@@ -105,6 +107,8 @@ public final class DocumentAnalyzer {
     public func getHighlightSlice(_ visibleRange: LineRange) throws -> DocumentHighlightSlice
     public func analyzeIndentGuides() throws -> IndentGuideResult
     public func analyzeIndentGuidesInLineRange(_ visibleRange: LineRange) throws -> IndentGuideResult
+    public func analyzeBracketPairs() throws -> BracketPairResult
+    public func analyzeBracketPairsInLineRange(_ visibleRange: LineRange) throws -> BracketPairResult
     public func close()
 }
 ```
@@ -160,7 +164,8 @@ if let textAnalyzer = try engine.createAnalyzer(fileName: "Demo.swift") {
     let preview = try textAnalyzer.analyzeText(sourceCode)
     let line = try textAnalyzer.analyzeLine(sourceCode, info: TextLineInfo(line: 0))
     let guides = try textAnalyzer.analyzeIndentGuides(sourceCode)
-    _ = (preview, line, guides)
+    let brackets = try textAnalyzer.analyzeBracketPairs(sourceCode)
+    _ = (preview, line, guides, brackets)
     textAnalyzer.close()
 }
 
@@ -182,7 +187,9 @@ if let analyzer = try engine.loadDocument(document) {
     )
     let indentGuides = try analyzer.analyzeIndentGuides()
     let visibleIndentGuides = try analyzer.analyzeIndentGuidesInLineRange(LineRange(startLine: 0, lineCount: 80))
-    _ = (initial, updated, cachedVisible, visible, indentGuides, visibleIndentGuides)
+    let brackets = try analyzer.analyzeBracketPairs()
+    let visibleBrackets = try analyzer.analyzeBracketPairsInLineRange(LineRange(startLine: 0, lineCount: 80))
+    _ = (initial, updated, cachedVisible, visible, indentGuides, visibleIndentGuides, brackets, visibleBrackets)
     analyzer.close()
 }
 ```

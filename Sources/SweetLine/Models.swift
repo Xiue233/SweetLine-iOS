@@ -151,6 +151,74 @@ public struct DocumentHighlightSlice: Sendable, Equatable {
     }
 }
 
+public enum BracketTokenKind: Int32, Sendable, Equatable {
+    case opening = 0
+    case closing = 1
+
+    public init(nativeValue: Int32) {
+        self = nativeValue == Self.closing.rawValue ? .closing : .opening
+    }
+}
+
+public enum BracketMatchState: Int32, Sendable, Equatable {
+    case matched = 0
+    case unmatched = 1
+    case unknown = 2
+
+    public init(nativeValue: Int32) {
+        switch nativeValue {
+        case Self.matched.rawValue:
+            self = .matched
+        case Self.unmatched.rawValue:
+            self = .unmatched
+        default:
+            self = .unknown
+        }
+    }
+}
+
+public struct BracketToken: Sendable, Equatable {
+    public let range: TextRange
+    public let depth: Int
+    public let kind: BracketTokenKind
+    public let matchState: BracketMatchState
+    public let partnerRange: TextRange?
+
+    public init(
+        range: TextRange,
+        depth: Int,
+        kind: BracketTokenKind,
+        matchState: BracketMatchState,
+        partnerRange: TextRange? = nil
+    ) {
+        self.range = range
+        self.depth = depth
+        self.kind = kind
+        self.matchState = matchState
+        self.partnerRange = partnerRange
+    }
+}
+
+public struct LineBracketPairs: Sendable, Equatable {
+    public var tokens: [BracketToken]
+
+    public init(tokens: [BracketToken] = []) {
+        self.tokens = tokens
+    }
+}
+
+public struct BracketPairResult: Sendable, Equatable {
+    public let startLine: Int
+    public let totalLineCount: Int
+    public var lines: [LineBracketPairs]
+
+    public init(startLine: Int = 0, totalLineCount: Int = 0, lines: [LineBracketPairs] = []) {
+        self.startLine = startLine
+        self.totalLineCount = totalLineCount
+        self.lines = lines
+    }
+}
+
 public struct IndentGuideLine: Sendable, Equatable {
     public struct BranchPoint: Sendable, Equatable {
         public let line: Int
