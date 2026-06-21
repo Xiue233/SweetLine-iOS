@@ -10,7 +10,7 @@ final class SweetLineTests: XCTestCase {
     }
 
     func testSDKVersionMatchesDesktopBindings() {
-        XCTAssertEqual(SweetLineSDK.version, "1.2.4")
+        XCTAssertEqual(SweetLineSDK.version, "1.3.0")
     }
 
     func testSyntaxCompileErrorCodeConstants() {

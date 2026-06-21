@@ -8,7 +8,7 @@
 - 平台：iOS 14+
 - 绑定方式：基于 SweetLine C API 与内置 `SweetLineCoreIOS.xcframework` 的 Swift API
 - Demo 工程：`Demo`（SwiftUI/UIKit）
-- 包版本：`1.2.4`
+- 包版本：`1.3.0`
 
 ## 安装
 

@@ -8,7 +8,7 @@ This document describes the Swift Package SDK in this repository.
 - Platform: iOS 14+
 - Binding style: Swift API over the SweetLine C API and bundled `SweetLineCoreIOS.xcframework`
 - Demo project: `Demo` (SwiftUI/UIKit)
-- Package version: `1.2.4`
+- Package version: `1.3.0`
 
 ## Install
 

@@ -1,3 +1,3 @@
 public enum SweetLineSDK {
-    public static let version = "1.2.4"
+    public static let version = "1.3.0"
 }
