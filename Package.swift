@@ -13,7 +13,7 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "SweetLineCoreIOS",
-            url: "https://github.com/Xiue233/SweetLine-iOS/releases/download/1.3.0/SweetLineCoreIOS.xcframework.zip",
+            url: "https://github.com/Xiue233/SweetLine-iOS/releases/download/v1.3.0/SweetLineCoreIOS.xcframework.zip",
             checksum: "e75089a900167855dc58e978b1172b8e03e96f100aa490f40e2dd4134fac3993"
         ),
         .target(
