@@ -42,6 +42,8 @@ scripts/build-shared.sh --platform ios
 Scripts/sync-native.sh
 ```
 
+这会刷新供 SwiftPM/Xcode 使用的动态 `SweetLineCoreIOS.xcframework`，同时保留 `prebuilt/ios/<arch>/` 下的 `libsweetline.dylib`，供 KMP 等原生消费者使用。
+
 远程 SwiftPM 分发时，可将 `SweetLineCoreIOS.xcframework.zip` 作为 release artifact 发布，并将本地 binary target 替换为 URL 与 checksum。
 
 ## 核心类型

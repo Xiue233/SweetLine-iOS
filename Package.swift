@@ -17,7 +17,10 @@ let package = Package(
         ),
         .target(
             name: "SweetLine",
-            dependencies: ["SweetLineCoreIOS"]
+            dependencies: ["SweetLineCoreIOS"],
+            linkerSettings: [
+                .linkedLibrary("iconv"),
+            ]
         ),
         .testTarget(
             name: "SweetLineTests",

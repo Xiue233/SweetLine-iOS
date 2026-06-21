@@ -36,6 +36,8 @@ scripts/build-shared.sh --platform ios
 platform/iOS/Scripts/sync-native.sh
 ```
 
+This keeps the per-architecture runtime `dylib` outputs under `prebuilt/ios/<arch>/` for native consumers such as KMP, and refreshes the framework archives plus `SweetLineCoreIOS.xcframework.zip` for SwiftPM/Xcode consumers.
+
 For remote SwiftPM distribution, publish `SweetLineCoreIOS.xcframework.zip` as a release artifact and replace the local binary target with a URL plus checksum.
 
 ## Usage
@@ -100,6 +102,8 @@ Sources/SweetLine/
 Vendor/iOS/SweetLineCoreIOS.xcframework
 Tests/SweetLineTests/
 Demo/
+prebuilt/ios/arm64/libsweetline.dylib
+prebuilt/ios/simulator-arm64/libsweetline.dylib
 ```
 
 The demo app lives in `platform/iOS/Demo` and consumes this package as a local Swift Package dependency.

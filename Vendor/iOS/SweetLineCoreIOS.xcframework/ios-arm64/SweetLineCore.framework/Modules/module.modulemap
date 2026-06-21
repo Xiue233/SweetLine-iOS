@@ -1,0 +1,6 @@
+framework module SweetLineCore {
+  umbrella header "SweetLineCore.h"
+  export *
+
+  module * { export * }
+}

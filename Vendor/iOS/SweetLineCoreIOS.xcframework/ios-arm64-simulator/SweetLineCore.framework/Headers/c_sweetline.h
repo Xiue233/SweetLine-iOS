@@ -323,23 +323,30 @@ SL_API int32_t* sl_document_analyze_indent_guides_in_line_range(
   sl_analyzer_handle_t analyzer_handle, int32_t* visible_range);
 
 /// Perform bracket pair analysis on a managed document
-/// @param analyzer_handle Document highlight analyzer handle
-/// @return Analysis result, format same as sl_text_analyze_bracket_pairs
+/// @param analyzer_handle Document analyzer handle
+/// @return Analysis result, tightly packed in byte order. Structure:
+/// @code
+/// Same format as sl_text_analyze_bracket_pairs:
+/// [flags, bracketTokenStride, lineCount, lineEntry...]
+/// @endcode
 /// Note: the return value must be freed by calling sl_free_buffer after use
 SL_API int32_t* sl_document_analyze_bracket_pairs(sl_analyzer_handle_t analyzer_handle);
 
 /// Perform bracket pair analysis for the requested visible line range on a managed document
-/// @param analyzer_handle Document highlight analyzer handle
+/// @param analyzer_handle Document analyzer handle
 /// @param visible_range Visible line range, array structure: [startLine],[lineCount]
-/// @return Analysis result slice. Structure:
+/// @return Analysis result, tightly packed in byte order. Structure:
 /// @code
 /// result[0] = bracket payload flags
 ///             bit0: hasStartIndex
 /// result[1] = bracket token field count (stride)
-/// result[2] = start line
-/// result[3] = total document line count
-/// result[4] = returned line count
-/// Followed by returned line entries. Bracket token payload is the same as sl_text_analyze_bracket_pairs.
+/// result[2] = slice start line
+/// result[3] = total line count
+/// result[4] = slice line count
+/// Followed by line_count line entries:
+///   line_entry[0] = bracket token count of current line
+///   followed by token_count * stride fields
+/// Bracket token payload is the same as sl_text_analyze_bracket_pairs.
 /// @endcode
 /// Note: the return value must be freed by calling sl_free_buffer after use
 SL_API int32_t* sl_document_analyze_bracket_pairs_in_line_range(
