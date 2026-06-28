@@ -20,25 +20,33 @@ import SweetLine
 
 ## Native Artifact
 
-The package uses a local binary target:
+The published Swift Package resolves the native core from the GitHub release asset:
 
 ```swift
 .binaryTarget(
     name: "SweetLineCoreIOS",
-    path: "Vendor/iOS/SweetLineCoreIOS.xcframework"
+    url: "https://github.com/Xiue233/SweetLine-iOS/releases/download/v1.3.1/SweetLineCoreIOS.xcframework.zip",
+    checksum: "45bcf3f36e0b23d2c4757f8681aea7d22c2489510da51ec8dd7e090dde568cc8"
 )
 ```
 
-Refresh the bundled artifact from the repository root:
+For repo-local refresh and validation, rebuild from the repository root and then sync the bundled vendor copy:
 
 ```bash
 scripts/build-shared.sh --platform ios
 platform/iOS/Scripts/sync-native.sh
 ```
 
-This keeps the per-architecture runtime `dylib` outputs under `prebuilt/ios/<arch>/` for native consumers such as KMP, and refreshes the framework archives plus `SweetLineCoreIOS.xcframework.zip` for SwiftPM/Xcode consumers.
+That flow refreshes all iOS release artifacts together:
 
-For remote SwiftPM distribution, publish `SweetLineCoreIOS.xcframework.zip` as a release artifact and replace the local binary target with a URL plus checksum.
+- `prebuilt/ios/arm64/libsweetline.dylib`
+- `prebuilt/ios/simulator-arm64/libsweetline.dylib`
+- `prebuilt/ios/arm64/SweetLineCore.framework.zip`
+- `prebuilt/ios/simulator-arm64/SweetLineCore.framework.zip`
+- `prebuilt/ios/SweetLineCoreIOS.xcframework.zip`
+- `platform/iOS/Vendor/iOS/SweetLineCoreIOS.xcframework`
+
+`SweetLineCoreIOS.xcframework.zip` is the SwiftPM release artifact. The per-architecture `dylib` and framework archives remain available for native consumers and manual inspection.
 
 ## Usage
 
